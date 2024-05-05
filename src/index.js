@@ -37,13 +37,15 @@ const chatModel = new ChatOllama({
   model: "phi3",
   temperature: 0.5, //Para que no sea muy creativo
 });
+//poner a funcionar que el modelo haga el quiz de tipo de aprendizaje segun la metodologia aplicada
 const prompt = ChatPromptTemplate.fromMessages([
   ["system", bd.system_prompt],
-  ["user", "me gusta aprender con ilustraciones, imagenes y videos"],
+  ["user", "me gusta aprender con novelas de ciencia ficcion"], //reemplazar esto por un prompt generado por el modelo al hacer la encuesta
   ["ai", "Ok que quieres aprender?"],
   ["user", "{input}"],
 ]);
 
+//Agregar memoria al modelo
 // const historyAwarePrompt = ChatPromptTemplate.fromMessages([
 //   new MessagesPlaceholder("chat_history"),
 //   ["user", "{input}"],
