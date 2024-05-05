@@ -6,7 +6,6 @@ import morgan from "morgan";
 import { Server } from "socket.io";
 import { createServer } from "node:http";
 import ia from "./services/ia";
-import modeloia from "./services/modeloia";
 import { Ollama } from "@langchain/community/llms/ollama";
 import bd from "./bd";
 dotenv.config();
@@ -36,8 +35,10 @@ io.on("connection", async (socket) => {
 
   socket.on("chat message", async (msg) => {
     console.log(msg);
-    student = bd.students[0];
-    student_isnew = student.isnew;
+    let student = bd.students[0];
+    console.log(student);
+
+    let student_isnew = student.isnew;
     io.emit("chat message", msg);
 
     //Utiliza la api de Ollama para obtener respuestas del modelo phi3
