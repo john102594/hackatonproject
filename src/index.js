@@ -55,7 +55,8 @@ io.on("connection", async (socket) => {
     const chunks = [];
     for await (const chunk of stream) {
       chunks.push(chunk);
-      console.log(chunk);
+      // console.log(chunk);
+      // await io.emit("chat message", chunk);
       //Descomentar esta linea para que responda palabra a palabra por wbsocket
       // await io.emit("chat message", chunk);
     }
@@ -81,13 +82,13 @@ function getprompt(student, msg) {
   let prompt = "";
   if (student.isnew) {
     prompt =
-      "con base a las siguientes respuestas indicame cual es mi metodo de aprendizaje recomendado en un prompt de maximo 100 palabras dame solo el propmt" +
+      "con base a las siguientes respuestas indicame cual es mi metodo de aprendizaje recomendado en un prompt de maximo 100 palabras, solo quiero que me respondas con el prompt" +
       bd.initprompt;
     bd.isnew = false;
   } else {
     prompt =
-      prompt +
-      " por favor basate en esta para explicar todo lo que te preguntare a continuacion:" +
+      student.prompt +
+      " por favor basate en esta para explicar todo lo que te preguntare a continuacion en maximo 100palabras:" +
       msg;
   }
   console.log(prompt);
