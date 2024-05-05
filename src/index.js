@@ -7,7 +7,9 @@ import { Server } from "socket.io";
 import { createServer } from "node:http";
 import ia from "./services/ia";
 import modeloia from "./services/modeloia";
-import { Ollama } from "@langchain/community/llms/ollama";
+// import { Ollama } from "@langchain/community/llms/ollama";
+import { ChatOllama } from "@langchain/community/chat_models/ollama";
+
 import bd from "./bd";
 dotenv.config();
 
@@ -26,6 +28,12 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(bodyParser.json({ limit: "50mb", extended: true }));
 
+//Model
+const chatModel = new ChatOllama({
+  baseUrl: "http://localhost:11434", // Default value
+  model: "phi3",
+});
+
 //WebSocket
 io.on("connection", async (socket) => {
   console.log("a user has connected!");
@@ -35,37 +43,37 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("chat message", async (msg) => {
-    console.log(msg);
-    student = bd.students[0];
-    student_isnew = student.isnew;
+    // console.log(msg);
+    // student = bd.students[0];
+    // student_isnew = student.isnew;
     io.emit("chat message", msg);
 
     //Utiliza la api de Ollama para obtener respuestas del modelo phi3
-    const ollama = new Ollama({
-      baseUrl: "http://localhost:11434", // Default value
-      model: "phi3", // Default value
-    });
+    // const ollama = new Ollama({
+    //   baseUrl: "http://localhost:11434", // Default value
+    //   model: "phi3", // Default value
+    // });
 
     //Get prompt
-    let newprompt = getprompt(student, msg);
+    // let newprompt = getprompt(student, msg);
 
-    //Send prompt to LLM
-    const stream = await ollama.stream(newprompt);
-    const chunks = [];
-    for await (const chunk of stream) {
-      chunks.push(chunk);
-      console.log(chunk);
-      //Descomentar esta linea para que responda palabra a palabra por wbsocket
-      // await io.emit("chat message", chunk);
-    }
-    console.log(chunks.join(""));
+    // //Send prompt to LLM
+    // const stream = await ollama.stream(newprompt);
+    // const chunks = [];
+    // for await (const chunk of stream) {
+    //   chunks.push(chunk);
+    //   console.log(chunk);
+    //   //Descomentar esta linea para que responda palabra a palabra por wbsocket
+    //   // await io.emit("chat message", chunk);
+    // }
+    // console.log(chunks.join(""));
 
-    //Valida si el estudiante es nuevo para cambiar el propmt de estudio
-    if (student_isnew) {
-      bd.students[0].prompt = chunks.join("");
-      student_isnew = false;
-    }
-    //coentar esta linea al descomentar la de arriba
+    // //Valida si el estudiante es nuevo para cambiar el propmt de estudio
+    // if (student_isnew) {
+    //   bd.students[0].prompt = chunks.join("");
+    //   student_isnew = false;
+    // }
+    // //coentar esta linea al descomentar la de arriba
     await io.emit("chat message", chunks.join(""));
   });
 
