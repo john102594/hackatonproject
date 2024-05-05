@@ -6,11 +6,12 @@ import morgan from "morgan";
 import { Server } from "socket.io";
 import { createServer } from "node:http";
 import ia from "./services/ia";
-import modeloia from "./services/modeloia";
 // import { Ollama } from "@langchain/community/llms/ollama";
 import { ChatOllama } from "@langchain/community/chat_models/ollama";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
+// import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
+// import { MessagesPlaceholder } from "@langchain/core/prompts";
 
 import bd from "./bd";
 dotenv.config();
@@ -36,6 +37,28 @@ const chatModel = new ChatOllama({
   model: "phi3",
   temperature: 0.5, //Para que no sea muy creativo
 });
+const prompt = ChatPromptTemplate.fromMessages([
+  ["system", bd.system_prompt],
+  ["user", "me gusta aprender con ilustraciones, imagenes y videos"],
+  ["ai", "Ok que quieres aprender?"],
+  ["user", "{input}"],
+]);
+
+// const historyAwarePrompt = ChatPromptTemplate.fromMessages([
+//   new MessagesPlaceholder("chat_history"),
+//   ["user", "{input}"],
+//   [
+//     "user",
+//     "Dada la conversación anterior, genere una consulta de búsqueda para buscar información relevante para la conversación",
+//   ],
+// ]);
+
+// const historyAwareRetrieverChain = await createHistoryAwareRetriever({
+//   llm: chatModel,
+//   retriever,
+//   rephrasePrompt: historyAwarePrompt,
+// });
+
 const outputParser = new StringOutputParser();
 
 //WebSocket
@@ -48,25 +71,20 @@ io.on("connection", async (socket) => {
 
   socket.on("chat message", async (msg) => {
     // io.emit("chat message", msg);
-    const prompt = ChatPromptTemplate.fromMessages([
-      ["system", bd.system_prompt],
-      ["user", "me gusta aprender con ilustraciones, imagenes y videos"],
-      ["ai", "Ok que quieres aprender?"],
-      ["user", "{input}"],
-    ]);
+
     const llmChain = prompt.pipe(chatModel).pipe(outputParser);
     const stream = await llmChain.stream({
       input: msg,
     });
     const chunks = [];
     for await (const chunk of stream) {
-      console.log(chunk);
+      // console.log(chunk);
       chunks.push(chunk);
       await io.emit("chat message", chunk);
     }
     let resp = chunks.join("");
     console.log(resp);
-    await io.emit("chat message", resp);
+    // await io.emit("chat message", resp);
   });
 
   if (!socket.recovered) {

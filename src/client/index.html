@@ -19,14 +19,13 @@
     socket.on('chat message', (msg) => {
       if (condition) {
         const item = document.createElement('li');
-        item.textContent = msg
+        item.textContent = ""
         messages.appendChild(item);
         condition = false
       }
       var listaLi = document.querySelectorAll("ul > li");
       var ultimoLi = listaLi[listaLi.length - 1];
       console.log(ultimoLi.value);
-      
       ultimoLi.textContent += msg;
       messages.scrollTop = messages.scrollHeight;
     });
