@@ -9,6 +9,8 @@ import ia from "./services/ia";
 import modeloia from "./services/modeloia";
 // import { Ollama } from "@langchain/community/llms/ollama";
 import { ChatOllama } from "@langchain/community/chat_models/ollama";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { StringOutputParser } from "@langchain/core/output_parsers";
 
 import bd from "./bd";
 dotenv.config();
@@ -32,7 +34,9 @@ app.use(bodyParser.json({ limit: "50mb", extended: true }));
 const chatModel = new ChatOllama({
   baseUrl: "http://localhost:11434", // Default value
   model: "phi3",
+  temperature: 0.5, //Para que no sea muy creativo
 });
+const outputParser = new StringOutputParser();
 
 //WebSocket
 io.on("connection", async (socket) => {
@@ -43,38 +47,26 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("chat message", async (msg) => {
-    // console.log(msg);
-    // student = bd.students[0];
-    // student_isnew = student.isnew;
-    io.emit("chat message", msg);
-
-    //Utiliza la api de Ollama para obtener respuestas del modelo phi3
-    // const ollama = new Ollama({
-    //   baseUrl: "http://localhost:11434", // Default value
-    //   model: "phi3", // Default value
-    // });
-
-    //Get prompt
-    // let newprompt = getprompt(student, msg);
-
-    // //Send prompt to LLM
-    // const stream = await ollama.stream(newprompt);
-    // const chunks = [];
-    // for await (const chunk of stream) {
-    //   chunks.push(chunk);
-    //   console.log(chunk);
-    //   //Descomentar esta linea para que responda palabra a palabra por wbsocket
-    //   // await io.emit("chat message", chunk);
-    // }
-    // console.log(chunks.join(""));
-
-    // //Valida si el estudiante es nuevo para cambiar el propmt de estudio
-    // if (student_isnew) {
-    //   bd.students[0].prompt = chunks.join("");
-    //   student_isnew = false;
-    // }
-    // //coentar esta linea al descomentar la de arriba
-    await io.emit("chat message", chunks.join(""));
+    // io.emit("chat message", msg);
+    const prompt = ChatPromptTemplate.fromMessages([
+      ["system", bd.system_prompt],
+      ["user", "me gusta aprender con ilustraciones, imagenes y videos"],
+      ["ai", "Ok que quieres aprender?"],
+      ["user", "{input}"],
+    ]);
+    const llmChain = prompt.pipe(chatModel).pipe(outputParser);
+    const stream = await llmChain.stream({
+      input: msg,
+    });
+    const chunks = [];
+    for await (const chunk of stream) {
+      console.log(chunk);
+      chunks.push(chunk);
+      await io.emit("chat message", chunk);
+    }
+    let resp = chunks.join("");
+    console.log(resp);
+    await io.emit("chat message", resp);
   });
 
   if (!socket.recovered) {
